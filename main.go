@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -17,7 +19,17 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// nolint: gochecknoglobals
+var (
+	_port     = flag.Int("port", 9010, "endpoint")
+	_endpoint = fmt.Sprintf("0.0.0.0:%d", *_port)
+)
+
 func main() {
+	flag.Parse()
+
+	log.Printf("Endpoint is set to: %s\n", _endpoint)
+
 	ctx := context.Background()
 	go func() {
 		if err := ensureDatabase(ctx); err != nil {
@@ -39,7 +51,7 @@ func ensureDatabase(ctx context.Context) error {
 		ic, err := instance.NewInstanceAdminClient(ctx,
 			option.WithoutAuthentication(),
 			option.WithGRPCDialOption(grpc.WithInsecure()),
-			option.WithEndpoint("0.0.0.0:9010"),
+			option.WithEndpoint(_endpoint),
 		)
 		if err != nil {
 			return err
@@ -82,7 +94,7 @@ func ensureDatabase(ctx context.Context) error {
 		dc, err := database.NewDatabaseAdminClient(ctx,
 			option.WithoutAuthentication(),
 			option.WithGRPCDialOption(grpc.WithInsecure()),
-			option.WithEndpoint("0.0.0.0:9010"),
+			option.WithEndpoint(_endpoint),
 		)
 		if err != nil {
 			return err
@@ -116,4 +128,3 @@ func ensureDatabase(ctx context.Context) error {
 
 	return nil
 }
-

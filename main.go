@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 
 	database "cloud.google.com/go/spanner/admin/database/apiv1"
 	instance "cloud.google.com/go/spanner/admin/instance/apiv1"
@@ -21,13 +22,18 @@ import (
 
 // nolint: gochecknoglobals
 var (
-	_port     = flag.Int("port", 9010, "endpoint")
-	_endpoint = fmt.Sprintf("0.0.0.0:%d", *_port)
+	_hostname = "0.0.0.0"
+	_grpcPort = flag.Int("grpc_port", 9010, "Port on which to run the emulator grpc server. Default to '9010'")
+	_httpPort = flag.Int("http_port", 9020, "Port on which to run the emulator HTTP server. Default to '9020'")
+
+	_endpoint = fmt.Sprintf("%s:%d", _hostname, *_grpcPort)
 )
 
 func main() {
 	flag.Parse()
 
+	log.Printf("'grpc_port' is set to: %d\n", *_grpcPort)
+	log.Printf("'http_port' is set to: %d\n", *_httpPort)
 	log.Printf("Endpoint is set to: %s\n", _endpoint)
 
 	ctx := context.Background()
@@ -36,7 +42,11 @@ func main() {
 			panic(err)
 		}
 	}()
-	cmd := exec.Command("./gateway_main", "--hostname", "0.0.0.0")
+	cmd := exec.Command("./gateway_main",
+		"--hostname", _hostname,
+		"--grpc_port", strconv.Itoa(*_grpcPort),
+		"--http_port", strconv.Itoa(*_httpPort),
+	)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Run()

@@ -25,8 +25,6 @@ var (
 	_hostname = "0.0.0.0"
 	_grpcPort = flag.Int("grpc_port", 9010, "Port on which to run the emulator grpc server. Default to '9010'")
 	_httpPort = flag.Int("http_port", 9020, "Port on which to run the emulator HTTP server. Default to '9020'")
-
-	_endpoint = fmt.Sprintf("%s:%d", _hostname, *_grpcPort)
 )
 
 func main() {
@@ -34,11 +32,13 @@ func main() {
 
 	log.Printf("'grpc_port' is set to: %d\n", *_grpcPort)
 	log.Printf("'http_port' is set to: %d\n", *_httpPort)
-	log.Printf("Endpoint is set to: %s\n", _endpoint)
+
+	endpoint := fmt.Sprintf("%s:%d", _hostname, *_grpcPort)
+	log.Printf("Endpoint is set to: %s\n", endpoint)
 
 	ctx := context.Background()
 	go func() {
-		if err := ensureDatabase(ctx); err != nil {
+		if err := ensureDatabase(ctx, endpoint); err != nil {
 			panic(err)
 		}
 	}()
@@ -52,7 +52,7 @@ func main() {
 	cmd.Run()
 }
 
-func ensureDatabase(ctx context.Context) error {
+func ensureDatabase(ctx context.Context, endpoint string) error {
 	inst := os.Getenv("SPANNER_INSTANCE_ID")
 	proj := os.Getenv("SPANNER_PROJECT_ID")
 	db := os.Getenv("SPANNER_DATABASE_ID")
@@ -61,7 +61,7 @@ func ensureDatabase(ctx context.Context) error {
 		ic, err := instance.NewInstanceAdminClient(ctx,
 			option.WithoutAuthentication(),
 			option.WithGRPCDialOption(grpc.WithInsecure()),
-			option.WithEndpoint(_endpoint),
+			option.WithEndpoint(endpoint),
 		)
 		if err != nil {
 			return err
@@ -104,7 +104,7 @@ func ensureDatabase(ctx context.Context) error {
 		dc, err := database.NewDatabaseAdminClient(ctx,
 			option.WithoutAuthentication(),
 			option.WithGRPCDialOption(grpc.WithInsecure()),
-			option.WithEndpoint(_endpoint),
+			option.WithEndpoint(endpoint),
 		)
 		if err != nil {
 			return err
